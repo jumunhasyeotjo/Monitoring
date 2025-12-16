@@ -47,12 +47,14 @@ scrape_configs:
 #        regex: 'true'
 #        action: keep
 
-  - job_name: kafka
-    static_configs:
-      - targets:
-          - ${KAFKA_EC2_PRIVATE_IP}:9404
+  - job_name: kafka-exporter
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/kafka.json
+        refresh_interval: 1m
 
-  - job_name: kafka-exporter  # kafka exporter 추가
-    static_configs:
-      - targets:
-          - ${KAFKA_EC2_PRIVATE_IP}:9308
+  - job_name: kafka-jmx
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/kafka-jmx.json
+        refresh_interval: 1m
