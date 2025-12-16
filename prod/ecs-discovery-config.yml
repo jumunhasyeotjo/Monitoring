@@ -1,5 +1,0 @@
-regions:
-  - ${AWS_REGIONS}
-
-clusters:
-  - ${ECS_CLUSTER_NAME}

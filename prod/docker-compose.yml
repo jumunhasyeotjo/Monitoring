@@ -55,22 +55,26 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
     depends_on:
       - loki
       - tempo
       - prometheus
 
-  # 5. alertmanager
   alertmanager:
     image: prom/alertmanager:v0.27.0
     container_name: alertmanager
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      # 1. 설정 템플릿 마운트 (환경변수 입력 전 템플릿 생성)
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tmp
+      # 2. 실행 스크립트 마운트 (환경변수 입력 sh 파일)
+      - ./alertmanager/entrypoint.sh:/entrypoint.sh
     ports:
       - "9093:9093"
-    command:
-      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+    # 3. 컨테이너 실행하면서 환경변수 입력
+    entrypoint: [ "/entrypoint.sh" ]
 
 
   # 6. ECS Discovery Sidecar (AWS API 기반 ECS IP 수집)
@@ -78,13 +82,13 @@ services:
     image: tkgregory/prometheus-ecs-discovery:latest
     container_name: ecs-discovery
     volumes:
-      - ./ecs-discovery-output:/output # 수집된 파일이 저장될 위치 (Prometheus와 공유)
-      - ./ecs-discovery-config.yml:/config/config.yml # 수집할 리전/클러스터 설정 파일 마운트
-      # EC2 에 설정된 IAM Role을 사용하므로 Key/Secret 불필요
+      - ./ecs-discovery-output:/output # 타겟 파일 저장 위치
+    environment:
+      - AWS_REGION=${AWS_REGIONS} # AWS SDK가 읽는 표준 환경변수
     command:
-      - "-config.file=/config/config.yml"
-      - "-output.file=/output/targets.json"
-      - "-freq=30s" # 30초마다 갱신
+      - "-config.cluster=${ECS_CLUSTER_NAME}"   # Compose가 이 변수를 치환해서 컨테이너에 전달함
+      - "-config.write-to=/output/targets.json"
+      - "-config.scrape-interval=30s"
 
   # 7. CloudWatch Exporter (YACE) - AWS 메트릭 수집용 (Prometheus 포맷팅 용)
   yace:
