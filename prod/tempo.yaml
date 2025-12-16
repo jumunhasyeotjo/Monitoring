@@ -1,0 +1,32 @@
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+        grpc:
+
+ingester:
+  trace_idle_period: 10s
+  max_block_bytes: 1_000_000
+
+compactor:
+  compaction:
+    compaction_window: 1h
+    max_block_bytes: 100_000_000
+    # prod 환경에 맞게 시간 연장
+    block_retention: 48h
+    compacted_block_retention: 1h
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /tmp/tempo/blocks
+
+# 해당 설정의 경우 Trace 데이터 분석해 Prometheus 메트릭을 생성하므로 CPU + 메모리 소모가 큼
+# prod 환경에서 EC2 인스턴스 낮은 경우 사용 X
+overrides:
+  metrics_generator_processors: [service-graphs, span-metrics]

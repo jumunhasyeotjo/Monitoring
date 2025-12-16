@@ -1,0 +1,84 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "id": null,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percent" } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "system_cpu_usage{service=\"$service\"}",
+          "legendFormat": "{{instance}} CPU",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Usage (System)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{service=\"$service\", area=\"heap\"}",
+          "legendFormat": "{{instance}} Heap Used",
+          "refId": "A"
+        }
+      ],
+      "title": "JVM Heap Memory Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{service=\"$service\"}",
+          "legendFormat": "{{instance}} Threads",
+          "refId": "A"
+        }
+      ],
+      "title": "Live Thread Count",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{service=\"$service\"}[1m])",
+          "legendFormat": "{{instance}} GC Time",
+          "refId": "A"
+        }
+      ],
+      "title": "Garbage Collection Duration",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["L3", "Infrastructure"],
+  "templating": {
+    "list": [
+      {
+        "datasource": "Prometheus",
+        "definition": "label_values(jvm_memory_used_bytes, service)",
+        "name": "service",
+        "query": "label_values(jvm_memory_used_bytes, service)",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Level 3 - Infrastructure Dashboard",
+  "uid": "l3-infra-view",
+  "version": 1
+}

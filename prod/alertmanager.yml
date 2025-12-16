@@ -1,0 +1,68 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: slack-warning
+  group_by: ["alertname", "service"]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 4h
+
+  routes:
+    # =========================
+    # Critical Alerts
+    # =========================
+    - matchers:
+        - severity="critical"
+      receiver: critical-notifications
+      repeat_interval: 30m
+
+    # =========================
+    # Warning Alerts
+    # =========================
+    - matchers:
+        - severity="warning"
+      receiver: slack-warning
+
+receivers:
+  # =========================
+  # Critical: Slack
+  # =========================
+  - name: critical-notifications
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_URL}
+        channel: "#grafana"
+        title: "🚨 [CRITICAL] {{ .CommonAnnotations.summary }}"
+        text: >-
+          *Service:* {{ .CommonLabels.service }}
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* CRITICAL
+          
+          {{ range .Alerts }}
+          *Started At:* {{ .StartsAt }}
+          {{ end }}
+
+          🔍 *Description*
+          {{ .CommonAnnotations.description }}
+
+          🔗 *Logs (TraceId 기반)*
+          {{ .CommonAnnotations.log_url }}
+
+        send_resolved: true
+
+  # =========================
+  # Warning: Slack only
+  # =========================
+  - name: slack-warning
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_URL}
+        channel: "#grafana"
+        title: "⚠️ [WARNING] {{ .CommonAnnotations.summary }}"
+        text: >-
+          *Service:* {{ .CommonLabels.service }}
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* WARNING
+
+          {{ .CommonAnnotations.description }}
+
+        send_resolved: true

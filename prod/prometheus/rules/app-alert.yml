@@ -1,0 +1,235 @@
+groups:
+  - name: app-alerts
+    rules:
+      # ==========================================================
+      # [Section 1] 애플리케이션 리소스
+      # ==========================================================
+
+      # 1) CPU 80% 이상 5분 지속 (Warning)
+      - alert: AppHighCPUWarning
+        expr: |
+          (sum by (service) (rate(process_cpu_seconds_total{service!=""}[1m])) / count by (service) (process_cpu_seconds_total{service!=""})) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "[{{ $labels.service }}] CPU usage high (warning)"
+          description: "CPU usage > 80% for 5m"
+          reason: "트래픽 증가 또는 로직 효율성 저하로 인한 CPU 부하"
+
+      # 2) CPU 95% 이상 (Critical)
+      - alert: AppHighCPUCritical
+        expr: |
+          (sum by (service) (rate(process_cpu_seconds_total{service!=""}[10s])) / count by (service) (process_cpu_seconds_total{service!=""})) > 0.95
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "[{{ $labels.service }}] CPU usage high (critical)"
+          description: "CPU usage > 95% for 10s"
+          reason: "심각한 CPU 부하로 인한 서비스 응답 지연 및 장애 위험"
+
+      # 3) JVM Heap Memory 80% (Warning)
+      - alert: AppHighHeapWarning
+        expr: |
+          (sum by (service) (jvm_memory_used_bytes{service!="",area="heap"}) / sum by (service) (jvm_memory_max_bytes{service!="",area="heap"})) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "[{{ $labels.service }}] Heap usage high (warning)"
+          description: "Heap usage > 80% for 5m"
+          reason: "메모리 누수 가능성 또는 힙 메모리 용량 부족 임박"
+
+      # 4) JVM Heap Memory 95% (Critical)
+      - alert: AppHighHeapCritical
+        expr: |
+          (sum by (service) (jvm_memory_used_bytes{service!="",area="heap"}) / sum by (service) (jvm_memory_max_bytes{service!="",area="heap"})) > 0.95
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "[{{ $labels.service }}] Heap usage high (critical)"
+          description: "Heap usage > 95%"
+          reason: "OOM(Out Of Memory) 발생 직전, 인스턴스 다운 위험"
+
+      # ==========================================================
+      # [Section 2] 도메인별 SLO/SLA 기반 알림 (Latency & Error)
+      # ==========================================================
+
+      # 5) [주문-P0] Latency SLO 위반 (Critical: 6s)
+      - alert: SLO_OrderLatencyBreach
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service="order-service", uri!~"/actuator.*"}[5m])) by (le)) > 6.0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[Order] P95 Latency SLO 위반 (Critical)"
+          description: "Order Service P95 Latency가 6초를 초과했습니다. (현재: {{ $value | humanizeDuration }})"
+          reason: "외부 동기 호출(쿠폰/재고/결제) 지연 또는 DB 병목 현상"
+
+      # 6) [결제-P0] Latency SLO 위반 (Critical: 4s)
+      - alert: SLO_PaymentLatencyBreach
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service="payment-service", uri!~"/actuator.*"}[5m])) by (le)) > 4.0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[Payment] P95 Latency SLO 위반 (Critical)"
+          description: "Payment Service P95 Latency가 4초를 초과했습니다. (현재: {{ $value | humanizeDuration }})"
+          reason: "PG사 응답 지연 또는 결제 DB 트랜잭션 Lock 대기"
+
+      # 7) [상품-P1] Latency SLO 위반 (Warning: 1.5s)
+      - alert: SLO_CatalogLatencyHigh
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{service="catalog-service", uri!~"/actuator.*"}[5m])) by (le)) > 1.5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "[Catalog] P99 Latency SLO 위반"
+          description: "Catalog Service P99 Latency가 1.5초를 초과했습니다."
+          reason: "Redis 캐시 미스 증가 또는 DB 조회 쿼리 성능 저하"
+
+      # 8) [주문/결제] 에러율 치명적 (Critical: 0.1% 이상) - P0 서비스 엄격 관리
+      - alert: SLO_HighErrorRate_Critical
+        expr: |
+          (sum(rate(http_server_requests_seconds_count{status=~"5..", service=~"order-service|payment-service"}[1m])) 
+           / 
+           sum(rate(http_server_requests_seconds_count{service=~"order-service|payment-service"}[1m]))) * 100 > 0.1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[{{ $labels.service }}] High Error Rate (>0.1%)"
+          description: "핵심 도메인(P0)의 5xx 에러율이 0.1%를 초과했습니다. (현재: {{ $value | printf \"%.2f\" }}%)"
+          reason: "애플리케이션 버그, NPE, 또는 하위 시스템 장애"
+
+      # 9) [전체 서비스] 일반적인 에러율 증가 (Warning: 1% 이상)
+      - alert: AppErrorRateHigh
+        expr: |
+          (sum(rate(http_server_requests_seconds_count{status=~"5..", service!=""}[5m])) 
+           / 
+           sum(rate(http_server_requests_seconds_count{service!=""}[5m]))) * 100 > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "[{{ $labels.service }}] Error Rate High (>1%)"
+          description: "서비스 5xx 에러율이 1%를 초과했습니다."
+          reason: "일시적인 네트워크 오류 또는 배포 후 사이드 이펙트 가능성"
+
+      # ==========================================================
+      # [Section 3] 미들웨어 & 분산 시스템 (Kafka, Tomcat, Hikari)
+      # ==========================================================
+
+      # 10) Kafka Consumer Lag (Critical) - 핵심 도메인 (Threshold: 100)
+      # topic 이름에 order, payment, delivery가 포함된 경우
+      - alert: KafkaConsumerLagCritical_Core
+        expr: |
+          sum by (topic, consumergroup) (kafka_consumergroup_lag{topic=~".*(order|payment|delivery).*", consumergroup!=""}) > 100
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[Kafka] Core Domain Lag Critical (>100)"
+          description: "핵심 도메인 토픽({{ $labels.topic }})의 처리 지연이 10초 이상 발생하고 있습니다."
+          reason: "컨슈머 처리 속도 저하 또는 트래픽 폭주로 인한 데이터 불일치 위험"
+
+      # 11) Kafka Consumer Lag (Warning) - 일반 도메인 (Threshold: 1000)
+      - alert: KafkaConsumerLagHigh_Global
+        expr: |
+          sum by (topic, consumergroup) (kafka_consumergroup_lag{topic!~".*(order|payment|delivery).*", consumergroup!=""}) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "[Kafka] Global Lag High (>1000)"
+          description: "토픽({{ $labels.topic }})의 Lag가 1000을 초과했습니다."
+          reason: "비핵심 도메인 이벤트 처리 지연 (통계, 알림 등)"
+
+      # 12) HikariCP Connection Pool 고갈 임박
+      - alert: HikariActiveConnectionsHigh
+        expr: |
+          (sum by(service) (hikaricp_connections_active{service!=""}) / sum by(service) (hikaricp_connections_max{service!=""})) > 0.90
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "[{{ $labels.service }}] DB Connection Pool High"
+          description: "Active connections >= 90% of max"
+          reason: "DB 쿼리 지연으로 인한 커넥션 반환 실패 또는 트래픽 급증"
+
+      # ==========================================================
+      # [Section 4] AWS 인프라 레벨 (RDS, Redis, ALB)
+      # * CloudWatch Exporter 메트릭 이름 기준 (환경에 따라 이름 확인 필요)
+      # ==========================================================
+
+      # 13) [RDS] CPU 사용률 위험 (80% 이상)
+      - alert: RDSCPUUtilizationHigh
+        expr: aws_rds_cpu_utilization_average > 80
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[RDS] CPU Utilization High (>80%)"
+          description: "DB Instance {{ $labels.dbinstance_identifier }} CPU > 80%"
+          reason: "Slow Query 발생 또는 대량의 데이터 처리 로직 수행 중"
+
+      # 14) [RDS] Free Storage 부족 (10% 미만) - 예시: 100GB 기준 10GB 미만 시
+      # (CloudWatch는 바이트 단위로 제공, 비율 계산 필요하거나 절대값 사용)
+      - alert: RDSLowStorageSpace
+        expr: aws_rds_free_storage_space_average < 10000000000
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[RDS] Storage Space Low (<10GB)"
+          description: "DB Instance {{ $labels.dbinstance_identifier }} 남은 용량 부족"
+          reason: "데이터 급증으로 인한 디스크 Full 및 서비스 중단 위험"
+
+      # 15) [Redis] CPU 사용률 위험 (싱글 스레드 고려 70% 이상 경고)
+      - alert: ElastiCacheCPUHigh
+        expr: aws_elasticache_cpu_utilization_average > 70
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[Redis] CPU Utilization High (>70%)"
+          description: "Redis Cluster {{ $labels.cache_cluster_id }} CPU > 70%"
+          reason: "복잡한 명령어(Keys, Hgetall 등) 수행 또는 트래픽 집중"
+
+      # 16) [Redis] Eviction 발생 (메모리 부족)
+      - alert: ElastiCacheEvictionsDetected
+        expr: rate(aws_elasticache_evictions_sum[1m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "[Redis] Keys Evicted Detected"
+          description: "Redis 메모리 부족으로 키 삭제(Eviction)가 발생하고 있습니다."
+          reason: "메모리 용량 부족, TTL 미설정 키 누적"
+
+      # 17) [ALB] Target 5xx 에러 급증
+      - alert: ALBTarget5xxHigh
+        expr: rate(aws_applicationelb_httpcode_target_5xx_count_sum[1m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[ALB] 5xx Errors Spiking"
+          description: "ALB TargetGroup에서 5xx 에러가 급증하고 있습니다."
+          reason: "애플리케이션 전면 장애 또는 배포 실패"
+
+      # 18) 애플리케이션 다운 (기존 유지)
+      - alert: ApplicationDown
+        expr: up{job!="", job!="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[{{ $labels.job }}] Application Down"
+          description: "Target scrape failed for 1m (instance={{ $labels.instance }})"
+          reason: "컨테이너 크래시(Crash), 헬스 체크 실패, 또는 네트워크 단절"
