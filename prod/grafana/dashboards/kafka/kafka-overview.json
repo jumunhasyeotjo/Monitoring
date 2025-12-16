@@ -1,49 +1,243 @@
 {
-  "uid": "kafka-overview",
-  "title": "Kafka Overview",
-  "tags": ["kafka"],
-  "schemaVersion": 38,
+  "uid": "kafka-monitoring-core",
+  "title": "Kafka Monitoring - Core Metrics",
+  "timezone": "browser",
+  "schemaVersion": 39,
   "version": 1,
-  "refresh": "15s",
+  "refresh": "30s",
+  "tags": ["kafka", "broker", "monitoring"],
   "panels": [
     {
+      "id": 1,
       "type": "stat",
       "title": "Under Replicated Partitions",
-      "id": 1,
-      "datasource": { "uid": "prometheus" },
-      "targets": [
-        { "expr": "kafka_server_replicamanager_underreplicatedpartitions" }
-      ],
-      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
-      "thresholds": {
-        "steps": [
-          { "color": "green", "value": null },
-          { "color": "orange", "value": 1 },
-          { "color": "red", "value": 3 }
-        ]
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Offline Partitions",
-      "id": 2,
-      "datasource": { "uid": "prometheus" },
-      "targets": [
-        { "expr": "kafka_controller_offlinepartitionscount" }
-      ],
-      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 }
-    },
-    {
-      "type": "timeseries",
-      "title": "Messages In / Sec",
-      "id": 3,
-      "datasource": { "uid": "prometheus" },
+      "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "rate(kafka_server_brokertopicmetrics_messagesin_total[1m])"
+          "expr": "kafka_server_replicamanager_underreplicatedpartitions",
+          "refId": "A"
         }
       ],
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 5 }
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 3 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Offline Partitions",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "kafka_controller_kafkacontroller_offlinepartitionscount",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Active Controller Count",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "kafka_controller_kafkacontroller_activecontrollercount",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Request / Response Queue Size",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "kafka_network_requestqueuesize",
+          "legendFormat": "requestQueue",
+          "refId": "A"
+        },
+        {
+          "expr": "kafka_network_responsequeuesize",
+          "legendFormat": "responseQueue",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 300 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 6 }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Broker Disk Usage (%)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 - (node_filesystem_free_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"} * 100)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 10, "w": 6, "h": 6 }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "CPU Usage (%)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[1m])) * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 6, "y": 10, "w": 6, "h": 6 }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "JVM Heap Usage (%)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"} * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Bytes In / Out Per Sec",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(kafka_server_brokertopicmetrics_bytesin_total[1m])",
+          "legendFormat": "BytesIn",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(kafka_server_brokertopicmetrics_bytesout_total[1m])",
+          "legendFormat": "BytesOut",
+          "refId": "B"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 22, "w": 12, "h": 6 }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Messages In Per Sec",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(kafka_server_brokertopicmetrics_messagesin_total[1m])",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 6 }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Consumer Lag",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "kafka_consumergroup_lag",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1000 },
+              { "color": "red", "value": 10000 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "x": 0, "y": 34, "w": 12, "h": 6 }
     }
   ]
 }
