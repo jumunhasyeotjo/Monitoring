@@ -1,0 +1,35 @@
+apiVersion: 1
+
+providers:
+  # [Level 1] Executive View (경영진/통합)
+  - name: '01-Executive-View'
+    orgId: 1
+    folder: 'Level 1 - Executive'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true        # 화면에서 수정 후 저장 가능하게 허용
+    options:
+      path: /var/lib/grafana/dashboards/L1  # 컨테이너 내부 경로 (아래 3단계 볼륨과 일치해야 함)
+
+  # [Level 2] Service View (서비스 상세)
+  - name: '02-Service-View'
+    orgId: 1
+    folder: 'Level 2 - Service (RED)'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/L2
+
+  # [Level 3] Infrastructure View (인프라 상세)
+  - name: '03-Infrastructure-View'
+    orgId: 1
+    folder: 'Level 3 - Infrastructure'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/L3
