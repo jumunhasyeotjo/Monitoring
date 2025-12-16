@@ -61,6 +61,18 @@
       ],
       "title": "DB Connection Pool (HikariCP)",
       "type": "timeseries"
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Consumer Lag",
+      "id": 4,
+      "datasource": { "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "max(kafka_consumergroup_lag{group=~\".*$service.*\"})"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 6 }
     }
   ],
   "schemaVersion": 38,

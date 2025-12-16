@@ -46,11 +46,11 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml # Datasource 설정
+      - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml # Datasource 설정
       # Dashboard Provider 설정 파일 마운트 (이 파일이 있어야 Grafana가 JSON 파일을 어디서 읽을지 인식 가능)
-      - ./grafana-dashboard-provider.yml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/grafana-dashboard-provider.yml:/etc/grafana/provisioning/dashboards/main.yaml
       # 대시보드(JSON) 폴더 통째로 마운트 (./dashboards 폴더를 컨테이너의 /var/lib/grafana/dashboards 로 연결)
-      - ./dashboards:/var/lib/grafana/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_AUTH_ANONYMOUS_ENABLED=true
@@ -66,7 +66,7 @@ services:
     image: prom/alertmanager:latest
     container_name: alertmanager
     volumes:
-      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
     ports:
       - "9093:9093"
     command:

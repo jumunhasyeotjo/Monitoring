@@ -33,3 +33,14 @@ providers:
     allowUiUpdates: true
     options:
       path: /var/lib/grafana/dashboards/L3
+
+  # Kafka 상세
+  - name: 'Kafka-View'
+    orgId: 1
+    folder: 'Kafka'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/kafka

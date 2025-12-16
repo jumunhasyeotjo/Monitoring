@@ -46,3 +46,13 @@ scrape_configs:
 #      - source_labels: [__meta_ecs_container_labels_PROMETHEUS_SCRAPE]
 #        regex: 'true'
 #        action: keep
+
+  - job_name: kafka
+    static_configs:
+      - targets:
+          - ${KAFKA_EC2_PRIVATE_IP}:9404
+
+  - job_name: kafka-exporter  # kafka exporter 추가
+    static_configs:
+      - targets:
+          - ${KAFKA_EC2_PRIVATE_IP}:9308

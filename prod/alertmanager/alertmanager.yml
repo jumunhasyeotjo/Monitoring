@@ -34,19 +34,28 @@ receivers:
         channel: "#grafana"
         title: "🚨 [CRITICAL] {{ .CommonAnnotations.summary }}"
         text: >-
-          *Service:* {{ .CommonLabels.service }}
-          *Alert:* {{ .CommonLabels.alertname }}
-          *Severity:* CRITICAL
-          
+          🚨 *CRITICAL 장애 발생*
+
+          *서비스*  
+          👉 {{ .CommonLabels.service }}
+
+          *심각도*  
+          👉 {{ .CommonLabels.severity }}
+
+          *발생 시각*  
           {{ range .Alerts }}
-          *Started At:* {{ .StartsAt }}
+          ⏱ {{ .StartsAt }}
           {{ end }}
 
-          🔍 *Description*
-          {{ .CommonAnnotations.description }}
+          *원인 요약*  
+          {{ if .CommonAnnotations.reason }}
+          ⚠️ {{ .CommonAnnotations.reason }}
+          {{ else }}
+          ⚠️ 원인 정보 없음
+          {{ end }}
 
-          🔗 *Logs (TraceId 기반)*
-          {{ .CommonAnnotations.log_url }}
+          *상세 내용*  
+          {{ .CommonAnnotations.description }}
 
         send_resolved: true
 
@@ -59,10 +68,27 @@ receivers:
         channel: "#grafana"
         title: "⚠️ [WARNING] {{ .CommonAnnotations.summary }}"
         text: >-
-          *Service:* {{ .CommonLabels.service }}
-          *Alert:* {{ .CommonLabels.alertname }}
-          *Severity:* WARNING
+          ⚠️ *WARNING 장애 감지*
 
+          *서비스*  
+          👉 {{ .CommonLabels.service }}
+
+          *심각도*  
+          👉 {{ .CommonLabels.severity }}
+
+          *발생 시각*  
+          {{ range .Alerts }}
+          ⏱ {{ .StartsAt }}
+          {{ end }}
+
+          *원인 요약*  
+          {{ if .CommonAnnotations.reason }}
+          ⚠️ {{ .CommonAnnotations.reason }}
+          {{ else }}
+          ⚠️ 원인 정보 없음
+          {{ end }}
+
+          *상세 내용*  
           {{ .CommonAnnotations.description }}
 
-        send_resolved: true
+        send_resolved: false

@@ -81,6 +81,18 @@
       ],
       "title": "🚨 Global Error Rate (%)",
       "type": "gauge"
+    },
+    {
+      "type": "stat",
+      "title": "P95 Latency (ms)",
+      "id": 3,
+      "datasource": { "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[1m])) by (le)) * 1000"
+        }
+      ],
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 }
     }
   ],
   "schemaVersion": 38,

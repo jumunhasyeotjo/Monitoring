@@ -1,0 +1,49 @@
+{
+  "uid": "kafka-overview",
+  "title": "Kafka Overview",
+  "tags": ["kafka"],
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "15s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Under Replicated Partitions",
+      "id": 1,
+      "datasource": { "uid": "prometheus" },
+      "targets": [
+        { "expr": "kafka_server_replicamanager_underreplicatedpartitions" }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "thresholds": {
+        "steps": [
+          { "color": "green", "value": null },
+          { "color": "orange", "value": 1 },
+          { "color": "red", "value": 3 }
+        ]
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Offline Partitions",
+      "id": 2,
+      "datasource": { "uid": "prometheus" },
+      "targets": [
+        { "expr": "kafka_controller_offlinepartitionscount" }
+      ],
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages In / Sec",
+      "id": 3,
+      "datasource": { "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "rate(kafka_server_brokertopicmetrics_messagesin_total[1m])"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 5 }
+    }
+  ]
+}
