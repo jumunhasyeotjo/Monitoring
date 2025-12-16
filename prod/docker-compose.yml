@@ -98,8 +98,8 @@ services:
     container_name: yace
     volumes:
       - ./yace-config.yml:/tmp/config.yml # 아래 3번 항목의 파일 생성 필요
-#    ports:
-#      - "5000:5000"
+    ports:
+      - "5000:5000"
     # EC2 IAM Role을 사용하므로 별도 credential 환경변수 불필요
 
   kafka-target-generator:
