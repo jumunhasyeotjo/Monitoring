@@ -27,7 +27,7 @@ services:
 
   # 3. Prometheus (Metrics)
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.51.1
     container_name: prometheus
     ports:
       - "9090:9090"
@@ -41,7 +41,7 @@ services:
 
   # 4. Grafana (Dashboard)
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.4.1
     container_name: grafana
     ports:
       - "3000:3000"
@@ -63,7 +63,7 @@ services:
 
   # 5. alertmanager
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.27.0
     container_name: alertmanager
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
@@ -88,7 +88,7 @@ services:
 
   # 7. CloudWatch Exporter (YACE) - AWS 메트릭 수집용 (Prometheus 포맷팅 용)
   yace:
-    image: nerdswords/yet-another-cloudwatch-exporter:v0.55.0-alpha
+    image:  ghcr.io/nerdswords/yet-another-cloudwatch-exporter:v0.55.0
     container_name: yace
     volumes:
       - ./yace-config.yml:/tmp/config.yml # 아래 3번 항목의 파일 생성 필요
