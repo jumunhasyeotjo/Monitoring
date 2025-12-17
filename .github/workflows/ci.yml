@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: Monitoring/prod
+        working-directory: prod
 
     steps:
       - name: Checkout
