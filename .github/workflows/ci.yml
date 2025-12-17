@@ -39,7 +39,7 @@ jobs:
 
       - name: Make entrypoint executable
         run: |
-          chmod +x prometheus/entrypoint.sh
+          find . -name "entrypoint.sh" -type f -exec chmod +x {} \;
 
       # 컨테이너 기동
       - name: Start monitoring stack
