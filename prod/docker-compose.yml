@@ -10,7 +10,7 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./loki.yaml:/etc/loki/local-config.yaml
-      - ./loki-data:/loki
+      - loki-data:/loki #named volume
 
   # 2. Tempo (Traces)
   tempo:
@@ -111,3 +111,6 @@ services:
       - ./targets:/etc/prometheus/targets
       - ./scripts/generate-kafka-targets.sh:/generate.sh
     command: ["/bin/sh", "/generate.sh"]
+
+volumes:
+  loki-data:
