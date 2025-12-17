@@ -37,6 +37,10 @@ jobs:
       - name: Docker Compose config check
         run: docker compose config
 
+      - name: Make entrypoint executable
+        run: |
+          chmod +x prometheus/entrypoint.sh
+
       # 컨테이너 기동
       - name: Start monitoring stack
         run: docker compose up -d
