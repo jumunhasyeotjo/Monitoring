@@ -45,7 +45,36 @@ jobs:
       - name: Start monitoring stack
         run: docker compose up -d
 
-      # Prometheus 기동 대기
+      - name: Check container status
+        run: docker compose ps
+
+      - name: Wait for Alertmanager
+        run: |
+          for i in {1..20}; do
+            if curl -sf http://localhost:9093/-/ready; then exit 0; fi
+            sleep 3
+          done
+          docker compose logs alertmanager
+          exit 1
+      
+      - name: Wait for Grafana
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:3000/api/health; then exit 0; fi
+            sleep 3
+          done
+          docker compose logs grafana
+          exit 1
+      
+      - name: Wait for Loki
+        run: |
+          for i in {1..20}; do
+            if curl -sf http://localhost:3100/ready; then exit 0; fi
+            sleep 3
+          done
+          docker compose logs loki
+          exit 1
+          
       - name: Wait for Prometheus
         run: |
           for i in {1..20}; do
@@ -64,6 +93,15 @@ jobs:
         run: |
           curl -sf http://localhost:9090/api/v1/status/config | jq .
 
+      6. 최종 안전벨트
+      - name: Fail if any container exited
+        run: |
+          if docker compose ps | grep -E "Exit|Restarting"; then
+            echo "Some containers are not healthy"
+            docker compose ps
+            exit 1
+          fi
+    
       # 종료
       - name: Shutdown
         if: always()
