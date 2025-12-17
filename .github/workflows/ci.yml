@@ -93,7 +93,7 @@ jobs:
         run: |
           curl -sf http://localhost:9090/api/v1/status/config | jq .
 
-      6. 최종 안전벨트
+      #6. 최종 안전벨트
       - name: Fail if any container exited
         run: |
           if docker compose ps | grep -E "Exit|Restarting"; then
