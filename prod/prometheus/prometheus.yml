@@ -26,26 +26,20 @@ scrape_configs:
   - job_name: 'ecs-services'
     file_sd_configs:
       - files:
-          - /etc/prometheus/targets/targets.json # 공유 볼륨의 파일 읽기
+          - /etc/prometheus/targets/targets.yml
     metrics_path: '/actuator/prometheus'
 
-    # 메타데이터 활용 라벨 생성 (job, instance)
+    # 파일 기반 discovery에 맞는 라벨링 규칙
     relabel_configs:
-      # 1. ECS Task Definition Family 이름을 'job' 라벨로 사용
-      - source_labels: [__meta_ecs_task_definition_family]
+      # 1. targets.yml에 있는 'task_name'을 'job' 라벨로 사용 (이미 job 라벨이 있으면 덮어씌움)
+      - source_labels: [task_name]
         target_label: job
 
-      # 2. ECS Task ARN의 뒷부분(ID)을 'instance' 라벨로 사용
-      - source_labels: [__meta_ecs_task_arn]
+      # 2. targets.yml에 있는 'task_arn'에서 ID만 추출해서 'instance'로 사용
+      - source_labels: [task_arn]
         regex: 'arn:aws:ecs:.*:.*:task/.*/(.*)'
         target_label: instance
         replacement: '$1'
-
-      # 3. Docker Label에 'PROMETHEUS_EXPORTER_PORT'가 있는 것만 수집 (Task Definition 에 설정되있어야 정상 동작)
-      # Docker Label 'PROMETHEUS_SCRAPE'가 'true'인 것만 수집 (나머지는 Drop)
-#      - source_labels: [__meta_ecs_container_labels_PROMETHEUS_SCRAPE]
-#        regex: 'true'
-#        action: keep
 
   - job_name: kafka-exporter
     file_sd_configs:

@@ -42,6 +42,7 @@ services:
     depends_on:
       - ecs-discovery
 
+  # 4. Grafana
   grafana:
     image: grafana/grafana:10.4.1
     container_name: grafana
@@ -63,6 +64,7 @@ services:
       - tempo
       - prometheus
 
+  # 5. Alert manager
   alertmanager:
     image: prom/alertmanager:v0.27.0
     container_name: alertmanager
@@ -88,11 +90,26 @@ services:
     environment:
       - AWS_REGION=${AWS_REGIONS} # AWS SDK가 읽는 표준 환경변수
     command:
-      - "-config.cluster=${ECS_CLUSTER_NAME}"   # Compose가 이 변수를 치환해서 컨테이너에 전달함
-      - "-config.write-to=/output/targets.json"
+      - "-config.cluster=${ECS_CLUSTER_NAME}"
+      - "-config.write-to=/output/targets_raw.yml"
       - "-config.scrape-interval=30s"
 
-  # 7. CloudWatch Exporter (YACE) - AWS 메트릭 수집용 (Prometheus 포맷팅 용)
+  # 7. Atomic Writer Sidecar (ecs-discovery, prometheus 충돌 방지)
+  atomic-writer:
+    image: busybox
+    container_name: atomic-writer
+    volumes:
+      - ./ecs-discovery-output:/output
+    command: >
+      sh -c "while true; do
+        if [ -f /output/targets_raw.yml ]; then
+          cp /output/targets_raw.yml /output/targets.yml.tmp && \
+          mv /output/targets.yml.tmp /output/targets.yml;
+        fi;
+        sleep 5;
+      done"
+
+  # 8. CloudWatch Exporter (YACE) - AWS 메트릭 수집용 (Prometheus 포맷팅 용)
   yace:
     image:  ghcr.io/nerdswords/yet-another-cloudwatch-exporter:v0.55.0
     container_name: yace
@@ -102,6 +119,7 @@ services:
       - "5000:5000"
     # EC2 IAM Role을 사용하므로 별도 credential 환경변수 불필요
 
+  # 9. kafka-target-generator
   kafka-target-generator:
     image: busybox
     container_name: kafka-target-generator
