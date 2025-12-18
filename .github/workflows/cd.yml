@@ -8,14 +8,27 @@ on:
 
 jobs:
   deploy-monitoring-prod:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests[0].merged == true &&
+      github.event.workflow_run.pull_requests[0].base.ref == 'dev'
+
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Bastion 경유 배포
+      - name: Prepare SSH (Bastion only)
+        run: |
+          mkdir -p ~/.ssh
+      
+          echo "${{ secrets.BASTION_PEM }}" > ~/.ssh/bastion.pem
+          chmod 400 ~/.ssh/bastion.pem
+      
+          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+
       - name: Deploy via Bastion
         run: |
           ssh -i ~/.ssh/bastion.pem \
