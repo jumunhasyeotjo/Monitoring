@@ -68,7 +68,7 @@ jobs:
               docker compose down
 
               echo \"▶ Start monitoring stack\"
-              docker compose up -d
+              docker compose up -d --build
 
               echo \"✅ Monitoring deployed successfully\"
             '"

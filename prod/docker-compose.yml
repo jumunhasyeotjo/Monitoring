@@ -27,7 +27,8 @@ services:
 
   # 3. Prometheus (Metrics)
   prometheus:
-    image: prom/prometheus:v2.51.1
+    build:
+      context: ./prometheus
     container_name: prometheus
     env_file:
       - .env
@@ -35,7 +36,6 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml.tmpl:/etc/prometheus/prometheus.yml.tmpl:ro
-      - ./prometheus/entrypoint.sh:/entrypoint.sh:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
       - ./ecs-discovery-output:/etc/prometheus/targets:ro
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
@@ -66,19 +66,16 @@ services:
 
   # 5. Alert manager
   alertmanager:
-    image: prom/alertmanager:v0.27.0
+    build:
+      context: ./alertmanager
     container_name: alertmanager
     volumes:
       # 1. 설정 템플릿 마운트 (환경변수 입력 전 템플릿 생성)
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tmp
-      # 2. 실행 스크립트 마운트 (환경변수 입력 sh 파일)
-      - ./alertmanager/entrypoint.sh:/entrypoint.sh
     ports:
       - "9093:9093"
     environment:
       - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
-    # 3. 컨테이너 실행하면서 환경변수 입력
-    entrypoint: [ "/entrypoint.sh" ]
 
 
   # 6. ECS Discovery Sidecar (AWS API 기반 ECS IP 수집)
