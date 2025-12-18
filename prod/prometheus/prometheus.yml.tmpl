@@ -2,10 +2,25 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "alertmanager:9093"
+
 scrape_configs:
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
+
+  # AWS CloudWatch Metrics (via YACE) (CloudWatch API 비용 절감을 위해 scrape_interval을 5분(300s)으로 설정)
+  - job_name: 'yace-cloudwatch'
+    scrape_interval: 300s
+    static_configs:
+      - targets: ['yace:5000']
 
   - job_name: "kafka-exporter"
     static_configs:
@@ -21,6 +36,7 @@ scrape_configs:
     relabel_configs:
       - source_labels: [task_name]
         target_label: job
+
       - source_labels: [task_arn]
         regex: 'arn:aws:ecs:.*:.*:task/.*/(.*)'
         target_label: instance
