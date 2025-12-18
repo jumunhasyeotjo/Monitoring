@@ -9,28 +9,40 @@ SERVICES = {
     "alertmanager": "http://alertmanager:9093/-/ready",
 }
 
+def check_services():
+    results = {}
+    failed = []
+
+    for name, url in SERVICES.items():
+        try:
+            r = requests.get(url, timeout=2)
+            if r.status_code == 200:
+                results[name] = "UP"
+            else:
+                results[name] = "DOWN"
+                failed.append(name)
+        except Exception:
+            results[name] = "DOWN"
+            failed.append(name)
+
+    return failed, results
+
+
 class Handler(BaseHTTPRequestHandler):
+
     def do_GET(self):
+        self.handle_health(include_body=True)
+
+    def do_HEAD(self):
+        self.handle_health(include_body=False)
+
+    def handle_health(self, include_body: bool):
         if self.path != "/health":
             self.send_response(404)
             self.end_headers()
             return
 
-        results = {}
-        failed = []
-
-        for name, url in SERVICES.items():
-            try:
-                r = requests.get(url, timeout=2)
-                if r.status_code == 200:
-                    results[name] = "UP"
-                else:
-                    results[name] = "DOWN"
-                    failed.append(name)
-            except Exception:
-                results[name] = "DOWN"
-                failed.append(name)
-
+        failed, results = check_services()
 
         if failed:
             self.send_response(503)
@@ -42,12 +54,12 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.end_headers()
 
-        response = {
-            "status": status,
-            "components": results
-        }
-
-        self.wfile.write(json.dumps(response).encode("utf-8"))
+        if include_body:
+            body = {
+                "status": status,
+                "components": results
+            }
+            self.wfile.write(json.dumps(body).encode("utf-8"))
 
 
 HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
