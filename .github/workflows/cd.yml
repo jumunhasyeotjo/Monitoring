@@ -15,56 +15,52 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare SSH (Bastion only)
+      - name: Setup SSH for Bastion
         run: |
           mkdir -p ~/.ssh
-      
+
           echo "${{ secrets.BASTION_PEM }}" > ~/.ssh/bastion.pem
           chmod 400 ~/.ssh/bastion.pem
-      
+
           ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
 
       - name: Deploy via Bastion
         run: |
-          ssh -i ~/.ssh/bastion.pem \
-              ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} << 'EOF'
-            set -e
+          ssh -i ~/.ssh/bastion.pem ec2-user@${{ secrets.BASTION_HOST }} << 'EOF'
+set -e
 
-            echo "SSH to Monitoring EC2 from Bastion"
-            ssh -i ~/monitoring-ec2.pem ec2-user@${{ secrets.MONITORING_PRIVATE_IP }} << 'INNER'
-              set -e
+echo "▶ SSH from Bastion to Monitoring EC2"
+ssh -i ~/monitoring-ec2.pem ec2-user@10.0.2.114 << 'INNER'
+set -e
 
-              cd /home/ec2-user/monitoring/Monitoring
+cd /home/ec2-user/monitoring/Monitoring/prod
 
-              echo "▶ Create .env (overwrite)"
-              cat > .env << 'ENVEOF'
-              TZ=Asia/Seoul
+echo "▶ Create .env (overwrite)"
+cat > .env << 'ENVEOF'
+TZ=Asia/Seoul
+SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+AWS_REGIONS=${{ secrets.AWS_REGIONS }}
+ECS_CLUSTER_NAME=${{ secrets.ECS_CLUSTER_NAME }}
+GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+KAFKA_BROKER_1=${{ secrets.KAFKA_BROKER_1 }}
+KAFKA_BROKER_2=${{ secrets.KAFKA_BROKER_2 }}
+ENVEOF
 
-              SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
-              AWS_REGIONS=${{ secrets.AWS_REGIONS }}
-              ECS_CLUSTER_NAME=${{ secrets.ECS_CLUSTER_NAME }}
-              GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
-              KAFKA_BROKER_1=${{ secrets.KAFKA_BROKER_1 }}
-              KAFKA_BROKER_2=${{ secrets.KAFKA_BROKER_2 }}
-              ENVEOF
+echo "▶ Pull latest code"
+git fetch origin
+git checkout dev
+git pull origin dev
 
-              echo "▶ Pull latest code"
-              git fetch origin
-              git checkout dev
-              git pull origin dev
+echo "▶ Validate docker compose config"
+docker compose config
 
-              echo "▶ Validate docker compose config"
-              docker compose config
+echo "▶ Restart monitoring stack"
+docker compose down
+docker compose up -d
 
-              echo "▶ Stop monitoring stack"
-              docker compose down
+echo "▶ Container status"
+docker compose ps
 
-              echo "▶ Start monitoring stack"
-              docker compose up -d
-
-              echo "▶ Check container status"
-              docker compose ps
-
-              echo "✅ Monitoring Prod deployed successfully"
-            INNER
-          EOF
+echo "✅ Monitoring Prod deployed successfully"
+INNER
+EOF
