@@ -1,104 +1,66 @@
 {
-  "annotations": { "list": [] },
   "editable": true,
-  "gnetId": null,
-  "id": null,
   "panels": [
     {
       "datasource": "Prometheus",
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
-      "id": 1,
       "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{service=\"$service\"}[1m]))",
-          "legendFormat": "RPS",
-          "refId": "A"
-        }
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=~\".*$service.*\"}[1m])) OR on() vector(0)", "legendFormat": "RPS" }
       ],
       "title": "Request Rate (RPS)",
       "type": "timeseries"
     },
     {
       "datasource": "Prometheus",
-      "fieldConfig": { "defaults": { "unit": "percent", "color": { "mode": "thresholds" } } },
       "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
-      "id": 2,
       "targets": [
-        {
-          "expr": "(sum(rate(http_server_requests_seconds_count{service=\"$service\", status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{service=\"$service\"}[1m]))) * 100",
-          "legendFormat": "Error %",
-          "refId": "A"
-        }
+        { "expr": "(sum(rate(http_server_requests_seconds_count{job=~\".*$service.*\", status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=~\".*$service.*\"}[1m]))) * 100 OR on() vector(0)" }
       ],
       "title": "Error Rate (%)",
       "type": "timeseries"
     },
     {
       "datasource": "Prometheus",
-      "fieldConfig": { "defaults": { "unit": "s" } },
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
-      "id": 3,
       "targets": [
-        {
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{service=\"$service\"}[1m])) by (le))",
-          "legendFormat": "P95 Latency",
-          "refId": "A"
-        }
+        { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=~\".*$service.*\"}[1m])) by (le))", "legendFormat": "P95" }
       ],
-      "title": "Duration (P95 Latency)",
+      "title": "Duration (Latency)",
       "type": "timeseries"
     },
     {
       "datasource": "Prometheus",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "id": 4,
       "targets": [
-        {
-          "expr": "sum(hikaricp_connections_active{service=\"$service\"})",
-          "legendFormat": "Active Connections",
-          "refId": "A"
-        }
+        { "expr": "sum(hikaricp_connections_active{job=~\".*$service.*\"}) OR on() vector(0)", "legendFormat": "Active" },
+        { "expr": "sum(hikaricp_connections_max{job=~\".*$service.*\"}) OR on() vector(0)", "legendFormat": "Max" }
       ],
       "title": "DB Connection Pool (HikariCP)",
       "type": "timeseries"
     },
     {
-      "type": "timeseries",
-      "title": "Kafka Consumer Lag",
-      "id": 4,
-      "datasource": { "uid": "prometheus" },
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "targets": [
-        {
-          "expr": "max(kafka_consumergroup_lag{group=~\".*$service.*\"})"
-        }
+        { "expr": "max(kafka_consumergroup_lag{group=~\".*$service.*\"}) OR on() vector(0)", "legendFormat": "Lag" }
       ],
-      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 6 }
+      "title": "Kafka Consumer Lag",
+      "type": "timeseries"
     }
   ],
-  "schemaVersion": 38,
-  "tags": ["L2", "Service"],
   "templating": {
     "list": [
       {
-        "current": {},
         "datasource": "Prometheus",
-        "definition": "label_values(http_server_requests_seconds_count, service)",
-        "hide": 0,
-        "includeAll": false,
-        "multi": false,
+        "definition": "label_values(up{job=~\"jumunhasyeo.*\"}, container_name)",
         "name": "service",
-        "options": [],
-        "query": "label_values(http_server_requests_seconds_count, service)",
+        "query": "label_values(up{job=~\"jumunhasyeo.*\"}, container_name)",
         "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
+        "type": "query",
+        "label": "Service Name"
       }
     ]
   },
-  "time": { "from": "now-30m", "to": "now" },
   "title": "Level 2 - Service RED Dashboard",
-  "uid": "l2-service-view",
-  "version": 1
+  "uid": "l2-service-view"
 }
