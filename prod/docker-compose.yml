@@ -136,6 +136,18 @@ services:
       - ./scripts/generate-kafka-targets.sh:/generate.sh
     command: ["/bin/sh", "/generate.sh"]
 
+  #10. health check
+  health-checker:
+    build: ./health-checker
+    container_name: health-checker
+    ports:
+      - "8080:8080"
+    depends_on:
+      - grafana
+      - prometheus
+      - loki
+      - alertmanager
+
 volumes:
   loki-data:
   prometheus-data:
