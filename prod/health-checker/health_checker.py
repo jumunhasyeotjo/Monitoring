@@ -1,12 +1,13 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import requests
+import json
 
-SERVICES = [
-    "http://grafana:3000/api/health",        # grafana
-    "http://prometheus:9090/-/ready",        # prometheus
-    "http://loki:3100/ready",                # loki
-    "http://alertmanager:9093/-/ready",      # alertmanager
-]
+SERVICES = {
+    "grafana": "http://grafana:3000/api/health",
+    "prometheus": "http://prometheus:9090/-/ready",
+    "loki": "http://loki:3100/ready",
+    "alertmanager": "http://alertmanager:9093/-/ready",
+}
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -15,20 +16,38 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
-        try:
-            for url in SERVICES:
+        results = {}
+        failed = []
+
+        for name, url in SERVICES.items():
+            try:
                 r = requests.get(url, timeout=2)
-                if r.status_code != 200:
-                    raise Exception(url)
+                if r.status_code == 200:
+                    results[name] = "UP"
+                else:
+                    results[name] = "DOWN"
+                    failed.append(name)
+            except Exception:
+                results[name] = "DOWN"
+                failed.append(name)
 
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"OK")
 
-        except Exception:
+        if failed:
             self.send_response(503)
-            self.end_headers()
-            self.wfile.write(b"DOWN")
+            status = "DOWN"
+        else:
+            self.send_response(200)
+            status = "UP"
+
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+
+        response = {
+            "status": status,
+            "components": results
+        }
+
+        self.wfile.write(json.dumps(response).encode("utf-8"))
 
 
 HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
