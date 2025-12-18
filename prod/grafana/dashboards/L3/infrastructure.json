@@ -2,41 +2,29 @@
   "editable": true,
   "panels": [
     {
-      "datasource": "CloudWatch",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "height": 8, "width": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "namespace": "AWS/ECS",
-          "metricName": "CPUUtilization",
-          "dimensions": {
-            "ClusterName": "jumunhasyeo-dev-cluster",
-            "ServiceName": "jumunhasyeo-dev-$service"
-          },
-          "region": "ap-northeast-2",
-          "statistics": ["Average"],
-          "period": "60s"
+          "expr": "aws_ecs_cpuutilization_average{cluster_name=\"jumunhasyeo-dev-cluster\", service_name=~\"jumunhasyeo-dev-$service.*\"}",
+          "legendFormat": "ECS CPU Utilization",
+          "refId": "A"
         }
       ],
-      "title": "☁️ AWS ECS CPU Utilization (CloudWatch)",
+      "title": "🛡️ AWS ECS CPU Utilization (via YACE)",
       "type": "timeseries"
     },
     {
-      "datasource": "CloudWatch",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "height": 8, "width": 12, "x": 12, "y": 0 },
       "targets": [
         {
-          "namespace": "AWS/ECS",
-          "metricName": "MemoryUtilization",
-          "dimensions": {
-            "ClusterName": "jumunhasyeo-dev-cluster",
-            "ServiceName": "jumunhasyeo-dev-$service"
-          },
-          "region": "ap-northeast-2",
-          "statistics": ["Average"],
-          "period": "60s"
+          "expr": "aws_ecs_memoryutilization_average{cluster_name=\"jumunhasyeo-dev-cluster\", service_name=~\"jumunhasyeo-dev-$service.*\"}",
+          "legendFormat": "ECS Memory Utilization",
+          "refId": "A"
         }
       ],
-      "title": "☁️ AWS ECS Memory Utilization (CloudWatch)",
+      "title": "🛡️ AWS ECS Memory Utilization (via YACE)",
       "type": "timeseries"
     },
     {
@@ -89,6 +77,6 @@
       }
     ]
   },
-  "title": "Level 3 - Infrastructure Dashboard",
+  "title": "Level 3 - Infrastructure Dashboard (Prometheus Integrated)",
   "uid": "l3-infra-view"
 }

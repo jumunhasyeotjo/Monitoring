@@ -8,7 +8,19 @@ discovery:
       - TargetGroup
 
   jobs:
-    # 1. RDS Metrics (CPU, FreeStorage)
+    # 1. ECS Metrics
+    - type: AWS/ECS
+      regions:
+        - ap-northeast-2
+      period: 300
+      length: 300
+      metrics:
+        - name: CPUUtilization
+          statistics: [ Average ]
+        - name: MemoryUtilization
+          statistics: [ Average ]
+
+    # 2. RDS Metrics (CPU, FreeStorage)
     - type: AWS/RDS
       regions:
         - ap-northeast-2
@@ -20,7 +32,7 @@ discovery:
         - name: FreeStorageSpace
           statistics: [Average]
 
-    # 2. ElastiCache (Redis) Metrics (CPU, Evictions)
+    # 3. ElastiCache (Redis) Metrics (CPU, Evictions)
     - type: AWS/ElastiCache
       regions:
         - ap-northeast-2
@@ -32,7 +44,7 @@ discovery:
         - name: Evictions
           statistics: [Sum]
 
-    # 3. ALB Target Group Metrics (5xx Errors)
+    # 4. ALB Target Group Metrics (5xx Errors)
     - type: AWS/ApplicationELB
       regions:
         - ap-northeast-2
