@@ -12,54 +12,56 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # GitHub → Bastion 키 세팅
+      # GitHub → Bastion SSH 키 세팅
       - name: Setup SSH for Bastion
         run: |
+          set -e
           mkdir -p ~/.ssh
           echo "${{ secrets.BASTION_SSH_KEY }}" > ~/.ssh/bastion.pem
           chmod 400 ~/.ssh/bastion.pem
           ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
 
+      # Bastion → Monitoring EC2 → Deploy
       - name: Deploy via Bastion
         run: |
-          ssh -i ~/.ssh/bastion.pem \
-              ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} << 'EOF'
-            set -e
+          set -e
 
-            echo "➡️ SSH to Monitoring EC2 from Bastion"
-            ssh -i ~/monitoring-ec2.pem ec2-user@${{ secrets.MONITORING_PRIVATE_IP }} << 'INNER'
+          ssh -i ~/.ssh/bastion.pem \
+            ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} \
+            "ssh -i ~/monitoring-ec2.pem ec2-user@${{ secrets.MONITORING_PRIVATE_IP }} '
               set -e
 
+              echo \"▶ Move to monitoring directory\"
               cd /home/ec2-user/monitoring/Monitoring/prod
-              
-              echo "▶ Create .env (overwrite)"
-              cat > .env << 'ENVEOF'
-              TZ=Asia/Seoul
 
-              # Slack / Alert
-              SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+              echo \"▶ Create .env (overwrite)\"
+              printf \"%s\n\" \
+                \"TZ=Asia/Seoul\" \
+                \"\" \
+                \"# Slack / Alert\" \
+                \"SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}\" \
+                \"\" \
+                \"# AWS / ECS\" \
+                \"AWS_REGIONS=${{ secrets.AWS_REGIONS }}\" \
+                \"ECS_CLUSTER_NAME=${{ secrets.ECS_CLUSTER_NAME }}\" \
+                \"\" \
+                \"# Grafana\" \
+                \"GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}\" \
+                \"\" \
+                \"# Kafka\" \
+                \"KAFKA_BROKER_1=${{ secrets.KAFKA_BROKER_1 }}\" \
+                \"KAFKA_BROKER_2=${{ secrets.KAFKA_BROKER_2 }}\" \
+                > .env
 
-              # AWS / ECS
-              AWS_REGIONS=${{ secrets.AWS_REGIONS }}
-              ECS_CLUSTER_NAME=${{ secrets.ECS_CLUSTER_NAME }}
+              echo \"▶ Pull latest code\"
+              git fetch origin
+              git reset --hard origin/dev
 
-              # Grafana
-              GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
-
-              # Kafka
-              KAFKA_BROKER_1=${{ secrets.KAFKA_BROKER_1 }}
-              KAFKA_BROKER_2=${{ secrets.KAFKA_BROKER_2 }}
-              ENVEOF
-
-              echo "Pull latest code"
-              git pull origin dev
-
-              echo "Stop monitoring stack"
+              echo \"▶ Stop monitoring stack\"
               docker compose down
 
-              echo "Start monitoring stack"
+              echo \"▶ Start monitoring stack\"
               docker compose up -d
 
-              echo "✅ Monitoring deployed successfully"
-            INNER
-          EOF
+              echo \"✅ Monitoring deployed successfully\"
+            '"
