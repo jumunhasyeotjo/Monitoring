@@ -22,9 +22,12 @@ compactor:
 
 storage:
   trace:
-    backend: local
-    local:
-      path: /tmp/tempo/blocks
+    backend: s3
+    s3:
+      bucket: 2025sparta-prod-tempo-logs
+      endpoint: s3.ap-northeast-2.amazonaws.com
+    wal:
+      path: /tmp/tempo/wal # 로컬 캐시 등을 위해 wal 경로는 남겨두는 것이 좋음
 
 # 해당 설정의 경우 Trace 데이터 분석해 Prometheus 메트릭을 생성하므로 CPU + 메모리 소모가 큼
 # prod 환경에서 EC2 인스턴스 낮은 경우 사용 X

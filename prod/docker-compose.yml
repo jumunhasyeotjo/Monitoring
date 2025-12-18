@@ -38,6 +38,7 @@ services:
       - ./prometheus/prometheus.yml.tmpl:/etc/prometheus/prometheus.yml.tmpl:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
       - ./ecs-discovery-output:/etc/prometheus/targets:ro
+      - ./prometheus-data:/prometheus
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     depends_on:
       - ecs-discovery
@@ -129,3 +130,4 @@ services:
 
 volumes:
   loki-data:
+  prometheus-data:
