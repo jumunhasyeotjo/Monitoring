@@ -1,0 +1,48 @@
+name: Monitoring Prod CD 
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "dev" ]
+
+jobs:
+  deploy-monitoring:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Bastion 키 세팅
+      - name: Setup SSH for Bastion
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.BASTION_SSH_KEY }}" > ~/.ssh/bastion.pem
+          chmod 600 ~/.ssh/bastion.pem
+          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+
+      # Bastion 접속 후, Bastion에 있는 monitoring-ec2.pem 사용
+      - name: Deploy via Bastion
+        run: |
+          ssh -i ~/.ssh/bastion.pem \
+              ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} << 'EOF'
+            set -e
+
+            echo "SSH to Monitoring EC2 from Bastion"
+            ssh -i ~/monitoring-ec2.pem ec2-user@${{ secrets.MONITORING_PRIVATE_IP }} << 'INNER'
+              set -e
+
+              cd /home/ec2-user/monitoring/Monitoring
+
+              echo "Pull latest code"
+              git pull origin main
+
+              echo "Stop monitoring stack"
+              docker compose down
+
+              echo "Start monitoring stack"
+              docker compose up -d
+
+              echo "✅ Monitoring deployed successfully"
+            INNER
+          EOF
