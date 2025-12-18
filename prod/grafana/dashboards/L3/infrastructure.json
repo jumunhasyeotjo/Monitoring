@@ -3,11 +3,11 @@
   "panels": [
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "height": 8, "width": 12, "x": 0, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "aws_ecs_cpuutilization_average{cluster_name=\"jumunhasyeo-dev-cluster\", service_name=~\"jumunhasyeo-dev-$service.*\"}",
-          "legendFormat": "ECS CPU Utilization",
+          "expr": "aws_ecs_cpuutilization_average{dimension_ClusterName=\"jumunhasyeo-dev-cluster\", dimension_ServiceName=~\"jumunhasyeo-dev-$service.*\"}",
+          "legendFormat": "ECS CPU ({{dimension_ServiceName}})",
           "refId": "A"
         }
       ],
@@ -16,11 +16,11 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "height": 8, "width": 12, "x": 12, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
         {
-          "expr": "aws_ecs_memoryutilization_average{cluster_name=\"jumunhasyeo-dev-cluster\", service_name=~\"jumunhasyeo-dev-$service.*\"}",
-          "legendFormat": "ECS Memory Utilization",
+          "expr": "aws_ecs_memory_utilization_average{dimension_ClusterName=\"jumunhasyeo-dev-cluster\", dimension_ServiceName=~\"jumunhasyeo-dev-$service.*\"}",
+          "legendFormat": "ECS Memory ({{dimension_ServiceName}})",
           "refId": "A"
         }
       ],
@@ -31,7 +31,7 @@
       "datasource": "Prometheus",
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
       "targets": [
-        { "expr": "system_cpu_usage{job=~\".*$service.*\"}", "legendFormat": "JVM CPU" }
+        { "expr": "system_cpu_usage{job=~\".*$service.*\"}", "legendFormat": "JVM CPU", "refId": "A" }
       ],
       "title": "🖥️ Prometheus CPU Usage (System)",
       "type": "timeseries"
@@ -40,7 +40,7 @@
       "datasource": "Prometheus",
       "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
       "targets": [
-        { "expr": "jvm_memory_used_bytes{job=~\".*$service.*\", area=\"heap\"}", "legendFormat": "Used" }
+        { "expr": "jvm_memory_used_bytes{job=~\".*$service.*\", area=\"heap\"}", "legendFormat": "Used", "refId": "A" }
       ],
       "title": "JVM Heap Memory Usage",
       "type": "timeseries"
@@ -49,7 +49,7 @@
       "datasource": "Prometheus",
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
       "targets": [
-        { "expr": "rate(jvm_gc_pause_seconds_sum{job=~\".*$service.*\"}[1m])", "legendFormat": "GC" }
+        { "expr": "rate(jvm_gc_pause_seconds_sum{job=~\".*$service.*\"}[1m])", "legendFormat": "GC", "refId": "A" }
       ],
       "title": "Garbage Collection Duration",
       "type": "timeseries"
@@ -58,7 +58,7 @@
       "datasource": "Prometheus",
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
       "targets": [
-        { "expr": "jvm_threads_live_threads{job=~\".*$service.*\"}", "legendFormat": "Threads" }
+        { "expr": "jvm_threads_live_threads{job=~\".*$service.*\"}", "legendFormat": "Threads", "refId": "A" }
       ],
       "title": "Live Thread Count",
       "type": "timeseries"
@@ -67,7 +67,7 @@
   "templating": {
     "list": [
       {
-        "datasource": "Prometheus",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
         "definition": "label_values(up{job=~\"jumunhasyeo.*\"}, container_name)",
         "name": "service",
         "query": "label_values(up{job=~\"jumunhasyeo.*\"}, container_name)",
