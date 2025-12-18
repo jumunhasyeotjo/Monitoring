@@ -1,2 +1,4 @@
-### env 제거 ###
-./.env
+.env
+loki-data/
+tempo-data/
+ecs-discovery-output/
