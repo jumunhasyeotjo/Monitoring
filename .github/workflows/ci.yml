@@ -30,7 +30,6 @@ jobs:
           ECS_CLUSTER_NAME=${{ secrets.ECS_CLUSTER_NAME }}
           GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
           KAFKA_BROKER_1=${{ secrets.KAFKA_BROKER_1 }}
-          KAFKA_BROKER_2=${{ secrets.KAFKA_BROKER_2 }}
           EOF
 
       # docker-compose 문법 검증

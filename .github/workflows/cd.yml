@@ -57,7 +57,6 @@ jobs:
                 \"\" \
                 \"# Kafka\" \
                 \"KAFKA_BROKER_1=${{ secrets.KAFKA_BROKER_1 }}\" \
-                \"KAFKA_BROKER_2=${{ secrets.KAFKA_BROKER_2 }}\" \
                 > .env
 
               echo \"▶ Pull latest code\"
