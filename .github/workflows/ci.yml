@@ -24,7 +24,7 @@ jobs:
       # .env 생성
       - name: Create .env
         run: |
-          cat <<EOF > .env
+          cat <<'EOF' > .env
           SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
           AWS_REGIONS=${{ secrets.AWS_REGIONS }}
           ECS_CLUSTER_NAME=${{ secrets.ECS_CLUSTER_NAME }}
