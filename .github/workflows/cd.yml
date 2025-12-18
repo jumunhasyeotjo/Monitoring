@@ -2,7 +2,7 @@ name: Monitoring Prod CD
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "test-cd" ]
 
 jobs:
   deploy-monitoring-prod:
