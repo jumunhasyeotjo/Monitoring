@@ -32,7 +32,7 @@ jobs:
           KAFKA_BROKER_1=${{ secrets.KAFKA_BROKER_1 }}
           KAFKA_BROKER_2=${{ secrets.KAFKA_BROKER_2 }}
           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
           EOF
 
       # docker-compose 문법 검증
