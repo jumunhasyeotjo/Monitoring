@@ -25,8 +25,19 @@ scrape_configs:
   - job_name: "kafka-exporter"
     static_configs:
       - targets:
-          - ${KAFKA_BROKER_1}:9038
-          - ${KAFKA_BROKER_2}:9038
+          - ${KAFKA_BROKER_1}:9308
+
+  - job_name: "kafka-jmx"
+    static_configs:
+      - targets:
+          - ${KAFKA_BROKER_1}:7071
+          - ${KAFKA_BROKER_1}:7071
+
+  - job_name: "node-exporter"
+    static_configs:
+      - targets:
+          - ${KAFKA_BROKER_1}:9100
+          - ${KAFKA_BROKER_1}:9100
 
   - job_name: 'ecs-services'
     file_sd_configs:
