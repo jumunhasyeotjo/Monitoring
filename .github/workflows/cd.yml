@@ -2,7 +2,7 @@ name: Monitoring Prod CD
 
 on:
   push:
-    branches: [ "test-cd" ]
+    branches: [ "dev" ]
 
 jobs:
   deploy-monitoring-prod:
@@ -52,7 +52,7 @@ jobs:
               ENVEOF
 
               echo "Pull latest code"
-              git pull origin test-cd
+              git pull origin dev
 
               echo "Stop monitoring stack"
               docker compose down
