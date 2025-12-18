@@ -1,11 +1,14 @@
 name: Monitoring Prod CD
 
 on:
-  push:
-    branches: [ "dev" ]
+  workflow_run:
+    workflows: ["Monitoring Prod CI"]
+    types:
+      - completed
 
 jobs:
   deploy-monitoring-prod:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -19,11 +22,11 @@ jobs:
               ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }} << 'EOF'
             set -e
 
-            echo "▶ SSH to Monitoring EC2 from Bastion"
+            echo "SSH to Monitoring EC2 from Bastion"
             ssh -i ~/monitoring-ec2.pem ec2-user@${{ secrets.MONITORING_PRIVATE_IP }} << 'INNER'
               set -e
 
-              cd /home/ec2-user/monitoring/Monitoring/prod
+              cd /home/ec2-user/monitoring/Monitoring
 
               echo "▶ Create .env (overwrite)"
               cat > .env << 'ENVEOF'
