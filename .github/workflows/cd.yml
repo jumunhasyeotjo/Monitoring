@@ -9,10 +9,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ 소스 체크아웃
       - name: Checkout
         uses: actions/checkout@v4
 
-      # GitHub → Bastion SSH 키 세팅
+      # 2️⃣ entrypoint.sh 실행 권한 부여
+      - name: Make entrypoint executable
+        run: |
+          set -e
+          find . -name "entrypoint.sh" -type f -exec chmod +x {} \;
+
+      # 3️⃣ GitHub → Bastion SSH 키 세팅
       - name: Setup SSH for Bastion
         run: |
           set -e
@@ -21,7 +28,7 @@ jobs:
           chmod 400 ~/.ssh/bastion.pem
           ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
 
-      # Bastion → Monitoring EC2 → Deploy
+      # 4️⃣ Bastion → Monitoring EC2 → Deploy
       - name: Deploy via Bastion
         run: |
           set -e
