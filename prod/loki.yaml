@@ -12,6 +12,7 @@ common:
     s3:
       bucketnames: 2025sparta-prod-loki-logs
       region: ap-northeast-2
+      s3forcepathstyle: false
       insecure: false
   replication_factor: 1
   ring:
