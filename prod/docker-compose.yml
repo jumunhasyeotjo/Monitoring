@@ -25,7 +25,7 @@ services:
       - .env
     volumes:
       - ./tempo.yaml:/etc/tempo.yaml
-      - ./tempo-data:/tmp/tempo
+      - tempo-data:/tmp/tempo
     ports:
       - "4317:4317"
       - "4318:4318"
@@ -147,3 +147,4 @@ services:
 volumes:
   loki-data:
   prometheus-data:
+  tempo-data:
