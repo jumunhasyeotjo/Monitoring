@@ -9,7 +9,9 @@ sed \
   /etc/prometheus/prometheus.yml.tmpl \
   > /etc/prometheus/prometheus.yml
 
+# 수정된 실행 명령어
 exec /bin/prometheus \
   --config.file=/etc/prometheus/prometheus.yml \
   --storage.tsdb.path=/prometheus \
-  --web.enable-lifecycle
+  --web.enable-lifecycle \
+  --web.enable-remote-write-receiver  # 이 라인을 반드시 추가하세요

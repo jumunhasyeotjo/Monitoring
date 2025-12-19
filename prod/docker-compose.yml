@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # 1. Loki (Logs)
   loki:
     image: grafana/loki:2.9.2
     container_name: loki
@@ -9,21 +8,21 @@ services:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
+      # CI에서는 값을 주입받고, EC2에서는 변수 자체가 생성되지 않도록 설정 (IAM Role 우선순위 확보)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_REGION=ap-northeast-2
     volumes:
       - ./loki.yaml:/etc/loki/local-config.yaml
-      - loki-data:/loki #named volume
+      - loki-data:/loki
 
-  # 2. Tempo (Traces)
   tempo:
     image: grafana/tempo:2.3.1
     container_name: tempo
     command: [ "-config.file=/etc/tempo.yaml" ]
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_REGION=ap-northeast-2
     volumes:
       - ./tempo.yaml:/etc/tempo.yaml
@@ -33,7 +32,6 @@ services:
       - "4318:4318"
       - "3200:3200"
 
-  # 3. Prometheus (Metrics)
   prometheus:
     build:
       context: ./prometheus
@@ -50,104 +48,3 @@ services:
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     depends_on:
       - ecs-discovery
-
-  # 4. Grafana
-  grafana:
-    image: grafana/grafana:10.4.1
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml # Datasource 설정
-      # Dashboard Provider 설정 파일 마운트 (이 파일이 있어야 Grafana가 JSON 파일을 어디서 읽을지 인식 가능)
-      - ./grafana/grafana-dashboard-provider.yml:/etc/grafana/provisioning/dashboards/main.yaml
-      # 대시보드(JSON) 폴더 통째로 마운트 (./dashboards 폴더를 컨테이너의 /var/lib/grafana/dashboards 로 연결)
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-      - GF_AUTH_DISABLE_LOGIN_FORM=false
-    depends_on:
-      - loki
-      - tempo
-      - prometheus
-
-  # 5. Alert manager
-  alertmanager:
-    build:
-      context: ./alertmanager
-    container_name: alertmanager
-    volumes:
-      # 1. 설정 템플릿 마운트 (환경변수 입력 전 템플릿 생성)
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tmp
-    ports:
-      - "9093:9093"
-    environment:
-      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
-
-
-  # 6. ECS Discovery Sidecar (AWS API 기반 ECS IP 수집)
-  ecs-discovery:
-    image: tkgregory/prometheus-ecs-discovery:latest
-    container_name: ecs-discovery
-    volumes:
-      - ./ecs-discovery-output:/output # 타겟 파일 저장 위치
-    environment:
-      - AWS_REGION=${AWS_REGIONS} # AWS SDK가 읽는 표준 환경변수
-    command:
-      - "-config.cluster=${ECS_CLUSTER_NAME}"
-      - "-config.write-to=/output/targets_raw.yml"
-      - "-config.scrape-interval=30s"
-
-  # 7. Atomic Writer Sidecar (ecs-discovery, prometheus 충돌 방지)
-  atomic-writer:
-    image: busybox
-    container_name: atomic-writer
-    volumes:
-      - ./ecs-discovery-output:/output
-    command: >
-      sh -c "while true; do
-        if [ -f /output/targets_raw.yml ]; then
-          cp /output/targets_raw.yml /output/targets.yml.tmp && \
-          mv /output/targets.yml.tmp /output/targets.yml;
-        fi;
-        sleep 5;
-      done"
-
-  # 8. CloudWatch Exporter (YACE) - AWS 메트릭 수집용 (Prometheus 포맷팅 용)
-  yace:
-    image:  ghcr.io/nerdswords/yet-another-cloudwatch-exporter:v0.55.0
-    container_name: yace
-    volumes:
-      - ./yace-config.yml:/tmp/config.yml # 아래 3번 항목의 파일 생성 필요
-    ports:
-      - "5000:5000"
-    # EC2 IAM Role을 사용하므로 별도 credential 환경변수 불필요
-
-  # 9. kafka-target-generator
-  kafka-target-generator:
-    image: busybox
-    container_name: kafka-target-generator
-    env_file:
-      - .env
-    volumes:
-      - ./targets:/etc/prometheus/targets
-      - ./scripts/generate-kafka-targets.sh:/generate.sh
-    command: ["/bin/sh", "/generate.sh"]
-
-  #10. health check
-  health-checker:
-    build: ./health-checker
-    container_name: health-checker
-    ports:
-      - "8080:8080"
-    depends_on:
-      - grafana
-      - prometheus
-      - loki
-      - alertmanager
-
-volumes:
-  loki-data:
-  prometheus-data:
