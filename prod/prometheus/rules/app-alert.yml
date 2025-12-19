@@ -2,7 +2,7 @@ groups:
   - name: app-alerts
     rules:
       # ==========================================================
-      # [Section 1] 애플리케이션 리소스
+      # [Section 1] 애플리케이션 리소스 (Actuator/Prometheus 기반)
       # ==========================================================
 
       # 1) CPU 80% 이상 5분 지속 (Warning)
@@ -126,16 +126,16 @@ groups:
       # ==========================================================
 
       # 10) Kafka Consumer Lag (Critical) - 핵심 도메인 (Threshold: 100)
-      # topic 이름에 order, payment, delivery가 포함된 경우
       - alert: KafkaConsumerLagCritical_Core
         expr: |
           sum by (topic, consumergroup) (kafka_consumergroup_lag{topic=~".*(order|payment|delivery).*", consumergroup!=""}) > 100
         for: 1m
         labels:
           severity: critical
+          service: "Kafka-Core"  # Slack 알림용 라벨 명시
         annotations:
           summary: "[Kafka] Core Domain Lag Critical (>100)"
-          description: "핵심 도메인 토픽({{ $labels.topic }})의 처리 지연이 10초 이상 발생하고 있습니다."
+          description: "핵심 도메인 토픽({{ $labels.topic }})의 처리 지연이 발생하고 있습니다."
           reason: "컨슈머 처리 속도 저하 또는 트래픽 폭주로 인한 데이터 불일치 위험"
 
       # 11) Kafka Consumer Lag (Warning) - 일반 도메인 (Threshold: 1000)
@@ -145,6 +145,7 @@ groups:
         for: 5m
         labels:
           severity: warning
+          service: "Kafka-Global" # Slack 알림용 라벨 명시
         annotations:
           summary: "[Kafka] Global Lag High (>1000)"
           description: "토픽({{ $labels.topic }})의 Lag가 1000을 초과했습니다."
@@ -164,7 +165,7 @@ groups:
 
       # ==========================================================
       # [Section 4] AWS 인프라 레벨 (RDS, Redis, ALB)
-      # * CloudWatch Exporter 메트릭 이름 기준 (환경에 따라 이름 확인 필요)
+      # * CloudWatch Exporter(YACE) 메트릭 기준
       # ==========================================================
 
       # 13) [RDS] CPU 사용률 위험 (80% 이상)
@@ -173,40 +174,43 @@ groups:
         for: 5m
         labels:
           severity: critical
+          service: "AWS-RDS"  # Slack 표시용 고정 서비스명
         annotations:
           summary: "[RDS] CPU Utilization High (>80%)"
-          description: "DB Instance {{ $labels.dbinstance_identifier }} CPU > 80%"
+          description: "DB Instance {{ $labels.db_instance_identifier }} CPU > 80%"
           reason: "Slow Query 발생 또는 대량의 데이터 처리 로직 수행 중"
 
-      # 14) [RDS] Free Storage 부족 (10% 미만) - 예시: 100GB 기준 10GB 미만 시
-      # (CloudWatch는 바이트 단위로 제공, 비율 계산 필요하거나 절대값 사용)
+      # 14) [RDS] Free Storage 부족 (10GB 미만)
       - alert: RDSLowStorageSpace
         expr: aws_rds_free_storage_space_average < 10000000000
         for: 5m
         labels:
           severity: critical
+          service: "AWS-RDS"
         annotations:
           summary: "[RDS] Storage Space Low (<10GB)"
-          description: "DB Instance {{ $labels.dbinstance_identifier }} 남은 용량 부족"
+          description: "DB Instance {{ $labels.db_instance_identifier }} 남은 용량 부족"
           reason: "데이터 급증으로 인한 디스크 Full 및 서비스 중단 위험"
 
-      # 15) [Redis] CPU 사용률 위험 (싱글 스레드 고려 70% 이상 경고)
+      # 15) [Redis] CPU 사용률 위험 (70% 이상)
       - alert: ElastiCacheCPUHigh
         expr: aws_elasticache_cpu_utilization_average > 70
         for: 1m
         labels:
           severity: critical
+          service: "AWS-Redis"
         annotations:
           summary: "[Redis] CPU Utilization High (>70%)"
           description: "Redis Cluster {{ $labels.cache_cluster_id }} CPU > 70%"
           reason: "복잡한 명령어(Keys, Hgetall 등) 수행 또는 트래픽 집중"
 
-      # 16) [Redis] Eviction 발생 (메모리 부족)
+      # 16) [Redis] Eviction 발생
       - alert: ElastiCacheEvictionsDetected
         expr: rate(aws_elasticache_evictions_sum[1m]) > 0
         for: 1m
         labels:
           severity: warning
+          service: "AWS-Redis"
         annotations:
           summary: "[Redis] Keys Evicted Detected"
           description: "Redis 메모리 부족으로 키 삭제(Eviction)가 발생하고 있습니다."
@@ -218,17 +222,20 @@ groups:
         for: 1m
         labels:
           severity: critical
+          service: "AWS-ALB"
         annotations:
           summary: "[ALB] 5xx Errors Spiking"
           description: "ALB TargetGroup에서 5xx 에러가 급증하고 있습니다."
           reason: "애플리케이션 전면 장애 또는 배포 실패"
 
-      # 18) 애플리케이션 다운 (기존 유지)
+      # 18) 애플리케이션 다운 / 타겟 유실
+      # up 메트릭에는 service 라벨이 없으므로 job 라벨 값을 service로 복사
       - alert: ApplicationDown
         expr: up{job!="", job!="prometheus"} == 0
         for: 1m
         labels:
           severity: critical
+          service: "{{ $labels.job }}"
         annotations:
           summary: "[{{ $labels.job }}] Application Down"
           description: "Target scrape failed for 1m (instance={{ $labels.instance }})"

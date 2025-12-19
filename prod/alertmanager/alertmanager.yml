@@ -36,26 +36,21 @@ receivers:
         text: >-
           🚨 *CRITICAL 장애 발생*
 
-          *서비스*  
-          👉 {{ .CommonLabels.service }}
+          *서비스* 👉 {{ or .CommonLabels.service .CommonLabels.job "N/A" }}
 
-          *심각도*  
-          👉 {{ .CommonLabels.severity }}
+          *심각도* 👉 {{ .CommonLabels.severity }}
 
-          *발생 시각*  
-          {{ range .Alerts }}
-          ⏱ {{ .StartsAt }}
+          *발생 시각* {{ range .Alerts }}
+          ⏱ {{ .StartsAt.Format "2006-01-02 15:04:05" }}
           {{ end }}
 
-          *원인 요약*  
-          {{ if .CommonAnnotations.reason }}
+          *원인 요약* {{ if .CommonAnnotations.reason }}
           ⚠️ {{ .CommonAnnotations.reason }}
           {{ else }}
           ⚠️ 원인 정보 없음
           {{ end }}
 
-          *상세 내용*  
-          {{ .CommonAnnotations.description }}
+          *상세 내용* {{ .CommonAnnotations.description }}
 
         send_resolved: true
 
@@ -70,25 +65,20 @@ receivers:
         text: >-
           ⚠️ *WARNING 장애 감지*
 
-          *서비스*  
-          👉 {{ .CommonLabels.service }}
+          *서비스* 👉 {{ or .CommonLabels.service .CommonLabels.job "N/A" }}
 
-          *심각도*  
-          👉 {{ .CommonLabels.severity }}
+          *심각도* 👉 {{ .CommonLabels.severity }}
 
-          *발생 시각*  
-          {{ range .Alerts }}
-          ⏱ {{ .StartsAt }}
+          *발생 시각* {{ range .Alerts }}
+          ⏱ {{ .StartsAt.Format "2006-01-02 15:04:05" }}
           {{ end }}
 
-          *원인 요약*  
-          {{ if .CommonAnnotations.reason }}
+          *원인 요약* {{ if .CommonAnnotations.reason }}
           ⚠️ {{ .CommonAnnotations.reason }}
           {{ else }}
           ⚠️ 원인 정보 없음
           {{ end }}
 
-          *상세 내용*  
-          {{ .CommonAnnotations.description }}
+          *상세 내용* {{ .CommonAnnotations.description }}
 
         send_resolved: false
