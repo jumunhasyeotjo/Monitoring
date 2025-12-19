@@ -7,10 +7,9 @@ services:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
     environment:
-      # CI에서는 값을 주입받고, EC2에서는 변수를 생성하지 않아 IAM Role을 우선적으로 사용하게 함
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_REGION=ap-northeast-2
+    env_file:
+      - .env
     volumes:
       - ./loki.yaml:/etc/loki/local-config.yaml
       - loki-data:/loki
@@ -21,9 +20,9 @@ services:
     container_name: tempo
     command: [ "-config.file=/etc/tempo.yaml" ]
     environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_REGION=ap-northeast-2
+    env_file:
+      - .env
     volumes:
       - ./tempo.yaml:/etc/tempo.yaml
       - ./tempo-data:/tmp/tempo
