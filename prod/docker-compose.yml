@@ -1,6 +1,5 @@
-version: '3.8'
-
 services:
+  # 1. Loki (Logs)
   loki:
     image: grafana/loki:2.9.2
     container_name: loki
@@ -8,7 +7,7 @@ services:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
     environment:
-      # CI에서는 값을 주입받고, EC2에서는 변수 자체가 생성되지 않도록 설정 (IAM Role 우선순위 확보)
+      # CI에서는 값을 주입받고, EC2에서는 변수를 생성하지 않아 IAM Role을 우선적으로 사용하게 함
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_REGION=ap-northeast-2
@@ -16,6 +15,7 @@ services:
       - ./loki.yaml:/etc/loki/local-config.yaml
       - loki-data:/loki
 
+  # 2. Tempo (Traces)
   tempo:
     image: grafana/tempo:2.3.1
     container_name: tempo
@@ -32,6 +32,7 @@ services:
       - "4318:4318"
       - "3200:3200"
 
+  # 3. Prometheus (Metrics)
   prometheus:
     build:
       context: ./prometheus
@@ -45,6 +46,105 @@ services:
       - ./prometheus/rules:/etc/prometheus/rules:ro
       - ./ecs-discovery-output:/etc/prometheus/targets:ro
       - prometheus-data:/prometheus
+    # entrypoint.sh 내부에 --web.enable-remote-write-receiver 플래그가 포함되어야 Tempo 메트릭 수신 가능
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     depends_on:
       - ecs-discovery
+
+  # 4. Grafana
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana/grafana-dashboard-provider.yml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+
+  # 5. Alert manager
+  alertmanager:
+    build:
+      context: ./alertmanager
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tmp
+    ports:
+      - "9093:9093"
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+
+  # 6. ECS Discovery Sidecar
+  ecs-discovery:
+    image: tkgregory/prometheus-ecs-discovery:latest
+    container_name: ecs-discovery
+    volumes:
+      - ./ecs-discovery-output:/output
+    environment:
+      - AWS_REGION=${AWS_REGIONS:-ap-northeast-2}
+    command:
+      - "-config.cluster=${ECS_CLUSTER_NAME}"
+      - "-config.write-to=/output/targets_raw.yml"
+      - "-config.scrape-interval=30s"
+
+  # 7. Atomic Writer Sidecar
+  atomic-writer:
+    image: busybox
+    container_name: atomic-writer
+    volumes:
+      - ./ecs-discovery-output:/output
+    command: >
+      sh -c "while true; do
+        if [ -f /output/targets_raw.yml ]; then
+          cp /output/targets_raw.yml /output/targets.yml.tmp && \
+          mv /output/targets.yml.tmp /output/targets.yml;
+        fi;
+        sleep 5;
+      done"
+
+  # 8. CloudWatch Exporter (YACE)
+  yace:
+    image: ghcr.io/nerdswords/yet-another-cloudwatch-exporter:v0.55.0
+    container_name: yace
+    volumes:
+      - ./yace-config.yml:/tmp/config.yml
+    ports:
+      - "5000:5000"
+    # EC2 IAM Role을 사용하므로 별도 credential 불필요
+
+  # 9. kafka-target-generator
+  kafka-target-generator:
+    image: busybox
+    container_name: kafka-target-generator
+    env_file:
+      - .env
+    volumes:
+      - ./targets:/etc/prometheus/targets
+      - ./scripts/generate-kafka-targets.sh:/generate.sh
+    command: ["/bin/sh", "/generate.sh"]
+
+  # 10. health check
+  health-checker:
+    build: ./health-checker
+    container_name: health-checker
+    ports:
+      - "8080:8080"
+    depends_on:
+      - grafana
+      - prometheus
+      - loki
+      - alertmanager
+
+# 정의되지 않은 볼륨 에러 방지를 위한 섹션
+volumes:
+  loki-data:
+  prometheus-data:
