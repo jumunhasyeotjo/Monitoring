@@ -3,6 +3,9 @@
   "panels": [
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "percent" }
+      },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
@@ -16,6 +19,9 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "percent" }
+      },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
         {
@@ -29,6 +35,9 @@
     },
     {
       "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit" }
+      },
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
       "targets": [
         { "expr": "system_cpu_usage{job=~\".*$service.*\"}", "legendFormat": "JVM CPU", "refId": "A" }
@@ -38,6 +47,9 @@
     },
     {
       "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "decbytes" }
+      },
       "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
       "targets": [
         { "expr": "jvm_memory_used_bytes{job=~\".*$service.*\", area=\"heap\"}", "legendFormat": "Used", "refId": "A" }
@@ -47,6 +59,9 @@
     },
     {
       "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      },
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
       "targets": [
         { "expr": "rate(jvm_gc_pause_seconds_sum{job=~\".*$service.*\"}[1m])", "legendFormat": "GC", "refId": "A" }
@@ -56,6 +71,9 @@
     },
     {
       "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
       "targets": [
         { "expr": "jvm_threads_live_threads{job=~\".*$service.*\"}", "legendFormat": "Threads", "refId": "A" }

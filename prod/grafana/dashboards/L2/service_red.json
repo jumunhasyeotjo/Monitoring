@@ -21,9 +21,17 @@
     },
     {
       "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      },
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
       "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=~\".*$service.*\"}[1m])) by (le))", "legendFormat": "P95" }
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=~\".*$service.*\"}[1m])) by (le)) * 1000",
+          "legendFormat": "P95"
+        }
       ],
       "title": "Duration (Latency)",
       "type": "timeseries"
