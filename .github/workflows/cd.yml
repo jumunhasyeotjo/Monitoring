@@ -49,7 +49,8 @@ jobs:
                 \"TZ=Asia/Seoul\" \
                 \"\" \
                 \"# Slack / Alert\" \
-                \"SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}\" \
+                \"SLACK_CRIT_WEBHOOK_URL=${{ secrets.SLACK_CRIT_WEBHOOK_URL }}\" \
+                \"SLACK_WARN_WEBHOOK_URL=${{ secrets.SLACK_WARN_WEBHOOK_URL }}\" \
                 \"\" \
                 \"# AWS / ECS\" \
                 \"AWS_REGIONS=${{ secrets.AWS_REGIONS }}\" \
