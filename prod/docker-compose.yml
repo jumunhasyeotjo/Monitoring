@@ -75,6 +75,8 @@ services:
     build:
       context: ./alertmanager
     container_name: alertmanager
+    env_file:
+      - .env
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tmp
     ports:
