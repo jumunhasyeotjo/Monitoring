@@ -25,7 +25,8 @@ jobs:
       - name: Create .env
         run: |
           cat <<'EOF' > .env
-          SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CRIT_WEBHOOK_URL=${{ secrets.SLACK_CRIT_WEBHOOK_URL }}
+          SLACK_WARN_WEBHOOK_URL=${{ secrets.SLACK_WARN_WEBHOOK_URL }}
           AWS_REGIONS=${{ secrets.AWS_REGIONS }}
           ECS_CLUSTER_NAME=${{ secrets.ECS_CLUSTER_NAME }}
           GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
