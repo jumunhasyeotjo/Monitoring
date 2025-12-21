@@ -80,7 +80,8 @@ services:
     ports:
       - "9093:9093"
     environment:
-      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - SLACK_CRIT_WEBHOOK_URL=${SLACK_CRIT_WEBHOOK_URL}
+      - SLACK_WARN_WEBHOOK_URL=${SLACK_WARN_WEBHOOK_URL}
 
   # 6. ECS Discovery Sidecar
   ecs-discovery:
