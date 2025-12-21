@@ -30,7 +30,7 @@ receivers:
   # =========================
   - name: critical-notifications
     slack_configs:
-      - api_url: ${SLACK_WEBHOOK_URL}
+      - api_url: ${SLACK_CRIT_WEBHOOK_URL}
         channel: "#grafana"
         title: "🚨 [CRITICAL] {{ .CommonAnnotations.summary }}"
         text: >-
@@ -59,7 +59,7 @@ receivers:
   # =========================
   - name: slack-warning
     slack_configs:
-      - api_url: ${SLACK_WEBHOOK_URL}
+      - api_url: ${SLACK_WARN_WEBHOOK_URL}
         channel: "#grafana"
         title: "⚠️ [WARNING] {{ .CommonAnnotations.summary }}"
         text: >-
