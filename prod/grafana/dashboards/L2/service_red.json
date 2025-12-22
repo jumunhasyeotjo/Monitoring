@@ -21,11 +21,7 @@
     },
     {
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms"
-        }
-      },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
       "targets": [
         {
@@ -38,21 +34,12 @@
     },
     {
       "datasource": "Prometheus",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
       "targets": [
         { "expr": "sum(hikaricp_connections_active{job=~\".*$service.*\"}) OR on() vector(0)", "legendFormat": "Active" },
         { "expr": "sum(hikaricp_connections_max{job=~\".*$service.*\"}) OR on() vector(0)", "legendFormat": "Max" }
       ],
       "title": "DB Connection Pool (HikariCP)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Prometheus",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "targets": [
-        { "expr": "max(kafka_consumergroup_lag{group=~\".*$service.*\"}) OR on() vector(0)", "legendFormat": "Lag" }
-      ],
-      "title": "Kafka Consumer Lag",
       "type": "timeseries"
     },
     {
@@ -82,5 +69,5 @@
     ]
   },
   "title": "Level 2 - Service RED Dashboard",
-  "uid": "l2-service-view"
+  "uid": "l2-service-view-clean"
 }
